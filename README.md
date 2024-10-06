@@ -1,34 +1,25 @@
-## About The Project
-Mikrotik compatible Docker image to run Amnezia WG on Mikrotik routers. As of now, support Arm v7 boards
-
-## About The Project
-This is a highly experimental attempt to run [Amnezia-WG](https://github.com/amnezia-vpn/amnezia-wg) on a Mikrotik router.
-
-### Prerequisites
-
-Follow the [Mikrotik guidelines](https://help.mikrotik.com/docs/display/ROS/Container) to enable container support.
-
-Install [Docker buildx](https://github.com/docker/buildx) subsystem, make and go.
-
-
 ### Building Docker Image
 
 To build a Docker container for the ARM7 run
 ```
 make build-arm7
 ```
-This command should cross-compile amnezia-wg locally and then build a docker image for ARM7 arch.
-
 To export a generated image, use
 ```
 make export-arm7
 ```
+To build a Docker container for the ARM64 run
+```
+make build-arm64
+```
+To export a generated image, use
+```
+make export-arm64
+```
 
-You will get the `docker-awg-arm7.tar` archive ready to upload to the Mikrotik router.
+You will get the `docker-awg-arm<ver>.tar` archive ready to upload to the Mikrotik router.
 
 ### Running locally
-
-Just run `docker compose up`
 
 Make sure to create a `awg` folder with the `wg0.conf` file.
 
