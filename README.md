@@ -13,13 +13,6 @@ Install [Docker buildx](https://github.com/docker/buildx) subsystem, make and go
 
 ### Building Docker Image
 
-You may need to initialize submodules
-
-```
-git submodule init
-git submodule update
-```
-
 To build a Docker container for the ARM7 run
 ```
 make build-arm7
@@ -57,17 +50,14 @@ Jmax = 1000
 # H1 = 25
 
 # IP masquerading
-PreUp = iptables -t nat -A POSTROUTING ! -o %i -j MASQUERADE
-# Firewall wg peers from other hosts
-PreUp = iptables -A FORWARD -o %i -m state --state ESTABLISHED,RELATED -j ACCEPT
-PreUp = iptables -A FORWARD -o %i -j REJECT
+PreUp = ip route add <ENDPOINT IP> via <CONTAINER IP> dev eth0
+PreUp = ip route add 10.0.0.0/8 via <CONTAINER IP> dev eth0
+PreUp = ip route add <UR ROUTER NETWORK>/16 via <CONTAINER IP> dev eth0
 
 # Remote settings for my workstation
 [Peer]
 PublicKey = wx...U=
-AllowedIPs = 10.0.0.2/32
-# An IP address to check peer connectivity (specific to this repo)
-TestIP = 10.0.0.2
+AllowedIPs = 0.0.0.0/1, 128.0.0.0/1
 # Your existing Wireguard server
 Endpoint=xx.xx.xx.xx:51820
 PersistentKeepalive = 25
@@ -106,7 +96,7 @@ Set up mount with the Wireguard configuration
 /container mounts
 add dst=/etc/amnezia/amneziawg/ name=awg_config src=/awg
 
-/container/add cmd=/sbin/init hostname=amnezia interface=veth1 logging=yes mounts=awg_config file=docker-awg-arm7.tar
+/container/add hostname=amnezia interface=veth1 logging=yes mounts=awg_config file=docker-awg-arm7.tar
 ```
 
 To start the container run
@@ -120,3 +110,14 @@ To get the container shell
 ```
 /container/shell 0
 ```
+
+To make it work in tandem with WireGuard you should write the following:
+```
+iptables-legacy -A FORWARD -i wg1 -o wg0 -j ACCEPT
+iptables-legacy -A FORWARD -i wg0 -o wg1 -j ACCEPT
+iptables-legacy -t nat -A POSTROUTING -o wg0 -j MASQUERADE
+iptables-legacy -t nat -A POSTROUTING -o <INPUT-INTERFACE> -j MASQUERADE
+```
+wg0 - Amnezia
+wg1 - WireGuard
+INPUT-INTERFACE - Main container interface
