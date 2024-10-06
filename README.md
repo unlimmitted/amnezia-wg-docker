@@ -96,7 +96,7 @@ Set up mount with the Wireguard configuration
 /container mounts
 add dst=/etc/amnezia/amneziawg/ name=awg_config src=/awg
 
-/container/add cmd=/sbin/init hostname=amnezia interface=veth1 logging=yes mounts=awg_config file=docker-awg-arm7.tar
+/container/add hostname=amnezia interface=veth1 logging=yes mounts=awg_config file=docker-awg-arm7.tar
 ```
 
 To start the container run
