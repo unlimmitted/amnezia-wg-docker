@@ -6,6 +6,12 @@ awg-mips:
 build-arm7: awg-arm7
 	DOCKER_BUILDKIT=1  docker buildx build --no-cache --platform linux/arm/v7 --output=type=docker --tag docker-awg:latest .
 
+build-arm64: awg-arm7
+	DOCKER_BUILDKIT=1  docker buildx build --no-cache --platform linux/arm64 --output=type=docker --tag docker-awg:latest .
+
 export-arm7: build-arm7
 	docker save docker-awg:latest > docker-awg-arm7.tar
+
+export-arm64: build-arm64
+	docker save docker-awg:latest > docker-awg-arm64.tar
 
