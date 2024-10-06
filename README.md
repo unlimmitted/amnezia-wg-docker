@@ -1,3 +1,11 @@
+## About The Project
+Mikrotik compatible Docker image to run Amnezia WG on Mikrotik routers. As of now, support Arm v7 and Arm64 boards
+
+
+I'll add from myself: The assembly has been reworked, packages and commands required for routing have been added. I think that without the usual wireguard included there is no point in the container. I want to automate all these actions so that I don't have to enter commands, I also need to forward the config of the usual WG.
+
+This is a highly experimental attempt to run [Amnezia-WG](https://github.com/amnezia-vpn/amnezia-wg) on a Mikrotik router. 
+
 ### Building Docker Image
 
 To build a Docker container for the ARM7 run
