@@ -1,4 +1,4 @@
-ARG GOLANG_VERSION=1.22
+ARG GOLANG_VERSION=1.21
 ARG ALPINE_VERSION=3.19
 FROM golang:${GOLANG_VERSION}-alpine${ALPINE_VERSION} AS builder
 
@@ -12,6 +12,11 @@ RUN apk update && apk add --no-cache bash openrc iptables iptables-legacy iprout
 COPY amneziawg-go/amneziawg-go /usr/bin/amneziawg-go
 COPY --from=builder /go/amneziawg-tools/src/wg /usr/bin/awg
 COPY --from=builder /go/amneziawg-tools/src/wg-quick/linux.bash /usr/bin/awg-quick
+COPY iptables.start /etc/local.d/
+
+RUN chmod +x /etc/local.d/iptables.start
+RUN rc-update add local default
+
 COPY wireguard-fs /
 
 RUN \
