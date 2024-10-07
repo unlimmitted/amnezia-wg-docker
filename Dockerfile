@@ -1,4 +1,4 @@
-ARG GOLANG_VERSION=1.21
+ARG GOLANG_VERSION=1.22
 ARG ALPINE_VERSION=3.19
 FROM golang:${GOLANG_VERSION}-alpine${ALPINE_VERSION} AS builder
 
@@ -9,7 +9,7 @@ RUN cd amneziawg-tools/src && \
 
 FROM alpine:${ALPINE_VERSION}
 RUN apk update && apk add --no-cache bash openrc iptables iptables-legacy iproute2 openresolv nano wireguard-tools-wg-quick
-COPY amnezia-wg/amneziawg-go /usr/bin/amneziawg-go
+COPY amneziawg-go/amneziawg-go /usr/bin/amneziawg-go
 COPY --from=builder /go/amneziawg-tools/src/wg /usr/bin/awg
 COPY --from=builder /go/amneziawg-tools/src/wg-quick/linux.bash /usr/bin/awg-quick
 COPY wireguard-fs /
@@ -35,7 +35,7 @@ RUN \
 # register /etc/init.d/wg-quick
 RUN rc-update add wg-quick default
 
+COPY setup-wg.sh /usr/local/bin/setup-wg.sh
+RUN chmod +x /usr/local/bin/setup-wg.sh
 
-VOLUME ["/sys/fs/cgroup"]
-HEALTHCHECK --interval=15m --timeout=30s CMD /bin/bash /data/healthcheck.sh
-CMD ["/sbin/init"]
+CMD ["/usr/local/bin/setup-wg.sh"]
