@@ -1,25 +1,19 @@
 ## About The Project
-Mikrotik compatible Docker image to run Amnezia WG on Mikrotik routers. As of now, support Arm v7 and Arm64 boards
+Mikrotik compatible Docker image to run Amnezia WG on Mikrotik routers. As of now, support Arm v7 boards
 
-This is a highly experimental attempt to run [Amnezia-WG](https://github.com/amnezia-vpn/amnezia-wg) on a Mikrotik router. 
+## About The Project
+This is a highly experimental attempt to run [Amnezia-WG](https://github.com/amnezia-vpn/amnezia-wg) on a Mikrotik router.
 
-### Building Docker Image
+### Export Docker Image
 
-To build a Docker container for the ARM7 run
+Export to ARM64
+```shell
+docker buildx build --no-cache --platform linux/arm64 --output=type=docker --tag docker-awg:latest . && docker save docker-awg:latest > docker-awg-arm64.tar
 ```
-make build-arm7
-```
-To export a generated image, use
-```
-make export-arm7
-```
-To build a Docker container for the ARM64 run
-```
-make build-arm64
-```
-To export a generated image, use
-```
-make export-arm64
+
+Export to ARM V7
+```shell
+docker buildx build --no-cache --platform linux/arm/v7 --output=type=docker --tag docker-awg:latest . && docker save docker-awg:latest > docker-awg-arm7.tar
 ```
 
 You will get the `docker-awg-arm<ver>.tar` archive ready to upload to the Mikrotik router.
@@ -35,7 +29,6 @@ Example `wg0.conf`:
 PrivateKey = gG...Y3s=
 Address = 10.0.0.1/32
 ListenPort = 51820
-# Jc лучше брать в интервале [3,10], Jmin = 100, Jmax = 1000,
 Jc = 3
 Jmin = 100
 Jmax = 1000
@@ -54,7 +47,6 @@ PreUp = ip route add <UR ROUTER NETWORK>/16 via 172.17.0.1 dev eth0
 [Peer]
 PublicKey = wx...U=
 AllowedIPs = 0.0.0.0/1, 128.0.0.0/1
-# Your existing Wireguard server
 Endpoint=xx.xx.xx.xx:51820
 PersistentKeepalive = 25
 
@@ -106,14 +98,3 @@ To get the container shell
 ```
 /container/shell 0
 ```
-
-To make it work in tandem with WireGuard you should write the following:
-```
-iptables-legacy -A FORWARD -i wg1 -o wg0 -j ACCEPT
-iptables-legacy -A FORWARD -i wg0 -o wg1 -j ACCEPT
-iptables-legacy -t nat -A POSTROUTING -o wg0 -j MASQUERADE
-iptables-legacy -t nat -A POSTROUTING -o <INPUT-INTERFACE> -j MASQUERADE
-```
-wg0 - Amnezia
-wg1 - WireGuard
-INPUT-INTERFACE - Main container interface

@@ -13,10 +13,6 @@ COPY amnezia-wg/amneziawg-go /usr/bin/amneziawg-go
 COPY --from=builder /go/amneziawg-tools/src/wg /usr/bin/awg
 COPY --from=builder /go/amneziawg-tools/src/wg-quick/linux.bash /usr/bin/awg-quick
 COPY iptables.start /etc/local.d/
-
-RUN chmod +x /etc/local.d/iptables.start
-RUN rc-update add local default
-
 COPY wireguard-fs /
 
 RUN \
@@ -40,6 +36,10 @@ RUN \
 # register /etc/init.d/wg-quick
 RUN rc-update add wg-quick default
 
+RUN chmod +x /etc/local.d/iptables.start
+RUN rc-update add local default
+
 VOLUME ["/sys/fs/cgroup"]
 HEALTHCHECK --interval=15m --timeout=30s CMD /bin/bash /data/healthcheck.sh
 CMD ["/sbin/init"]
+
