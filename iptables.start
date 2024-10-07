@@ -1,5 +1,7 @@
 #!/bin/sh
 
+wg-quick up wg1
+
 INPUT_INTERFACE=$(ip -o link show | awk -F': ' '{print $2}' | grep '^eth' | head -n 1)
 
 if [ -z "$INPUT_INTERFACE" ]; then
