@@ -1,60 +1,87 @@
-## About The Project
-Mikrotik compatible Docker image to run Amnezia WG on Mikrotik routers. As of now, support Arm v7 boards
+## О проекте
 
-## About The Project
-This is a highly experimental attempt to run [Amnezia-WG](https://github.com/amnezia-vpn/amnezia-wg) on a Mikrotik router.
+В текущем варианте `Amnezia WG` используется в роли клиента который подключается к внешнему серверу `Amnezia WG`. Доступ к контейнеру осуществляется через `WireGuard`, трафик из которого уходит в `Amnezia WG`
 
-### Export Docker Image
+### Экспорт Docker Image
 
-Export to ARM64
-```shell
-docker buildx build --no-cache --platform linux/arm64 --output=type=docker --tag docker-awg:latest . && docker save docker-awg:latest > docker-awg-arm64.tar
-```
-
-Export to ARM V7
-```shell
+Экспорт для ARM v7
+```bash
 docker buildx build --no-cache --platform linux/arm/v7 --output=type=docker --tag docker-awg:latest . && docker save docker-awg:latest > docker-awg-arm7.tar
 ```
 
-You will get the `docker-awg-arm<ver>.tar` archive ready to upload to the Mikrotik router.
+Экспорт для ARM64
+```bash
+docker buildx build --no-cache --platform linux/arm64 --output=type=docker --tag docker-awg:latest . && docker save docker-awg:latest > docker-awg-arm64.tar
+```
 
-### Running locally
+Вы получите `docker-awg-arm<ver>.tar` архив готовый для загрузки на роутер Mikrotik.
 
-Make sure to create a `awg` folder with the `wg0.conf` file.
+### Настройки на Mikrotik
 
-Example `wg0.conf`:
+#### Конфигурация `Amnezia WG`
+
+Обязательно создайте папку `awg` с файлом `wg0.conf` внутри.
+
+Пример `wg0.conf`:
 
 ```
 [Interface]
-PrivateKey = gG...Y3s=
-Address = 10.0.0.1/32
-ListenPort = 51820
-Jc = 3
-Jmin = 100
-Jmax = 1000
-# Parameters below will not work with the existing WireGuarg implementation.
-# Use if your peer running Amnesia-WG
-# S1 = 324
-# S2 = 452
-# H1 = 25
+PrivateKey = UEjfSk...
+Address = XX.XX.XX.XX/24
+DNS = 1.1.1.1
+Jc = ...
+Jmin = ...
+Jmax = ...
+S1 = ...
+S2 = ...
+H1 = ...
+H2 = ...
+H3 = ...
+H4 = ...
 
-# IP masquerading
 PreUp = ip route add <ENDPOINT IP> via 172.17.0.1 dev eth0
 PreUp = ip route add 10.0.0.0/8 via 172.17.0.1 dev eth0
 PreUp = ip route add <UR ROUTER NETWORK>/16 via 172.17.0.1 dev eth0
 
-# Remote settings for my workstation
 [Peer]
-PublicKey = wx...U=
+PublicKey = 5h6...
 AllowedIPs = 0.0.0.0/1, 128.0.0.0/1
-Endpoint=xx.xx.xx.xx:51820
-PersistentKeepalive = 25
-
+PersistentKeepalive = 0
+Endpoint = XXX.XXX.XXX.XXX:XXXXX
 ```
+#### Конфигурация `WireGuard`
 
-### Mikrotik Configuration
+Создайте интерфейс `WireGuard`
+```
+/interface wireguard
+add name="toAmneziaWG"
+```
+Определите IP адрес для интерфейса
+```
+/ip address 
+add address=10.0.0.2/24 network=10.0.0.0 interface="toAmneziaWG"
+```
+Создайте `Peer` для `WireGuard` на MikroTik
+```
+/interface wireguard peers
+add name="toAmnezia" interface="toAmneziaWG" endpoint-address=172.17.0.2 endpoint-port=51820 allowed-address=0.0.0.0/0 public-key=<PUBLIC KEY интерфейса WireGuard в контейнере>
+```
+Создайте файл `wg1.conf` в папке `wg` для входящего `WireGuard`
 
-Set up interface and IP address for the containers
+Пример `wg1.conf`
+```
+[Interface]
+ListenPort = 51820
+PrivateKey = SLu8a...
+Address = 10.0.0.1/24
+
+[Peer]
+PublicKey = <PublicKey интерфейса MikroTik>
+AllowedIPs = 10.0.0.2/32
+```
+#### Настройка NAT
+
+Настройте интерфейс и IP-адрес для контейнера
 
 ```
 /interface bridge
@@ -69,7 +96,7 @@ add bridge=containers interface=veth1
 /ip address
 add address=172.17.0.1/24 interface=containers network=172.17.0.0
 ```
-Set up masquerading for the outgoing traffic and dstnat
+Настройте masquerading для исходящего трафика и dstnat
 
 ```
 /ip firewall nat
@@ -78,22 +105,26 @@ add action=masquerade chain=srcnat comment="Outgoing NAT for containers" src-add
 add action=dst-nat chain=dstnat comment=amnezia-wg dst-port=51820 protocol=udp to-addresses=172.17.0.2 to-ports=51820
 ```
 
-Set up mount with the Wireguard configuration
+#### Настройка контейнера
 
+Установите mounts для `WireGuard` и `Amnezia WG`
 ```
 /container mounts
 add dst=/etc/amnezia/amneziawg/ name=awg_config src=/awg
 
-/container/add hostname=amnezia interface=veth1 logging=yes mounts=awg_config file=docker-awg-arm7.tar
+/container mounts
+add dst=/etc/wireguard/ name=wg_config src=/wg
+
+/container/add hostname=amnezia interface=veth1 logging=yes mounts=awg_config file=docker-awg-arm<ver>.tar
 ```
 
-To start the container run
+Запуск контейнера
 
 ```
 /container/start 0
 ```
 
-To get the container shell
+Для того чтобы попасть в терминал контейнера
 
 ```
 /container/shell 0
