@@ -4,23 +4,29 @@
 
 В текущем варианте `Amnezia WG` используется в роли клиента который подключается к внешнему серверу `Amnezia WG`. Доступ к контейнеру осуществляется через `WireGuard`, трафик из которого уходит в `Amnezia WG`
 
-### Экспорт Docker Image
+* [Конфигурация Amnezia WG](#конфигурация-amnezia-wg)
+* [Конфигурация WireGuard](#конфигурация-wireguard)
+* [Настройка NAT](#настройка-nat)
+* [Настройка контейнера](#настройка-контейнера)
+* [Запуск контейнера](#запуск-контейнера)
+
+## Экспорт Docker Image
 
 Экспорт для ARM v7
-```bash
+```
 docker buildx build --no-cache --platform linux/arm/v7 --output=type=docker --tag docker-awg:latest . && docker save docker-awg:latest > docker-awg-arm7.tar
 ```
 
 Экспорт для ARM64
-```bash
+```
 docker buildx build --no-cache --platform linux/arm64 --output=type=docker --tag docker-awg:latest . && docker save docker-awg:latest > docker-awg-arm64.tar
 ```
 
 Вы получите `docker-awg-arm<ver>.tar` архив готовый для загрузки на роутер Mikrotik.
 
-### Настройки на Mikrotik
+## Настройки на Mikrotik
 
-#### Конфигурация `Amnezia WG`
+### Конфигурация `Amnezia WG`
 
 Обязательно создайте папку `awg` с файлом `wg0.conf` внутри.
 
@@ -51,7 +57,7 @@ AllowedIPs = 0.0.0.0/1, 128.0.0.0/1
 PersistentKeepalive = 0
 Endpoint = XXX.XXX.XXX.XXX:XXXXX
 ```
-#### Конфигурация `WireGuard`
+### Конфигурация `WireGuard`
 
 Создайте интерфейс `WireGuard`
 ```
@@ -63,10 +69,12 @@ add name="toAmneziaWG"
 /ip address 
 add address=10.0.0.2/24 network=10.0.0.0 interface="toAmneziaWG"
 ```
+> Необходимо сгенерировать любыми способами пару ключей `WireGuard`
+> 
 Создайте `Peer` для `WireGuard` на MikroTik
 ```
 /interface wireguard peers
-add name="toAmnezia" interface="toAmneziaWG" endpoint-address=172.17.0.2 endpoint-port=51820 allowed-address=0.0.0.0/0 public-key=<PUBLIC KEY интерфейса WireGuard в контейнере>
+add name="toAmnezia" interface="toAmneziaWG" endpoint-address=172.17.0.2 endpoint-port=51820 allowed-address=0.0.0.0/0 public-key=<Сгенерированный PublicKey>
 ```
 Создайте файл `wg1.conf` в папке `wg` для входящего `WireGuard`
 
@@ -74,14 +82,14 @@ add name="toAmnezia" interface="toAmneziaWG" endpoint-address=172.17.0.2 endpoin
 ```
 [Interface]
 ListenPort = 51820
-PrivateKey = SLu8a...
+PrivateKey = <Сгенерированный PrivateKey>
 Address = 10.0.0.1/24
 
 [Peer]
 PublicKey = <PublicKey интерфейса MikroTik>
 AllowedIPs = 10.0.0.2/32
 ```
-#### Настройка NAT
+### Настройка NAT
 
 Настройте интерфейс и IP-адрес для контейнера
 
@@ -107,7 +115,7 @@ add action=masquerade chain=srcnat comment="Outgoing NAT for containers" src-add
 add action=dst-nat chain=dstnat comment=amnezia-wg dst-port=51820 protocol=udp to-addresses=172.17.0.2 to-ports=51820
 ```
 
-#### Настройка контейнера
+### Настройка контейнера
 
 Установите mounts для `WireGuard` и `Amnezia WG`
 ```
@@ -116,11 +124,13 @@ add dst=/etc/amnezia/amneziawg/ name=awg_config src=/awg
 
 /container mounts
 add dst=/etc/wireguard/ name=wg_config src=/wg
-
+```
+Создайте контейнер
+```
 /container/add hostname=amnezia interface=veth1 logging=yes mounts=awg_config file=docker-awg-arm<ver>.tar
 ```
 
-Запуск контейнера
+### Запуск контейнера
 
 ```
 /container/start 0
