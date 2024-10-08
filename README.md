@@ -70,7 +70,9 @@ add name="toAmneziaWG"
 add address=10.0.0.2/24 network=10.0.0.0 interface="toAmneziaWG"
 ```
 > Необходимо сгенерировать любыми способами пару ключей `WireGuard`
+> 
 > Можете сделать это [здесь](https://unlimmitted.github.io/wireguard-key-gen/)
+
 Создайте `Peer` для `WireGuard` на MikroTik
 ```
 /interface wireguard peers
