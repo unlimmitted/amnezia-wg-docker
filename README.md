@@ -1,4 +1,4 @@
-![Logo](https://github.com/user-attachments/assets/f159b438-0d89-4832-94c5-d66ba6e95000)
+![Logo](https://github.com/user-attachments/assets/0c5d6dc6-2edc-4704-a7ee-1f6f5e791664)
 
 ## О проекте
 
