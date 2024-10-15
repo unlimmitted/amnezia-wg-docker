@@ -48,8 +48,7 @@ H3 = ...
 H4 = ...
 
 PreUp = ip route add <ENDPOINT IP> via 172.17.0.1 dev eth0
-PreUp = ip route add 10.0.0.0/8 via 172.17.0.1 dev eth0
-PreUp = ip route add <UR ROUTER NETWORK>/16 via 172.17.0.1 dev eth0
+PreDown = ip route del <ENDPOINT IP> via 172.17.0.1 dev eth0
 
 [Peer]
 PublicKey = 5h6...
